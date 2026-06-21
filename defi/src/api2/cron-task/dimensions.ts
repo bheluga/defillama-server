@@ -103,7 +103,7 @@ ${tableToString(invalidFinancialStatementRecords, ['protocol', 'timeframe', 'key
 
 
 ${tableToString(invalidRevenueRecords, ['protocol', 'timeframe', 'key', 'error', 'debug'])}`,
-        process.env.REVENUE_ERROR_CHANNEL_WEBHOOK!)
+        process.env.REVENUE_MISMATCHES_CHANNEL_WEBHOOK)
     }
   }
 
