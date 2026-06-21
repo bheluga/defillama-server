@@ -97,6 +97,16 @@ ${tableToString(invalidFinancialStatementRecords, ['protocol', 'timeframe', 'key
     }
   }
 
+  if (process.env.REVENUE_MISMATCHES_CHANNEL_WEBHOOK) {
+    if (invalidRevenueRecords.length) {
+      await sendMessage(`Invalid revenue records detected - Please fix them asap:
+
+
+${tableToString(invalidRevenueRecords, ['protocol', 'timeframe', 'key', 'error', 'debug'])}`,
+        process.env.REVENUE_ERROR_CHANNEL_WEBHOOK!)
+    }
+  }
+
   // store what all metrics are available for each protocol
   const protocolSummaryMetadata: { [key: string]: Set<string> } = {}
 
@@ -323,7 +333,7 @@ ${tableToString(invalidFinancialStatementRecords, ['protocol', 'timeframe', 'key
       addAggregateRecords(protocol)
 
       // validate and detect invalid financial statement records
-      validateAggregateRecords(protocol, invalidFinancialStatementRecords)
+      validateAggregateRecords(protocol, invalidFinancialStatementRecords, invalidRevenueRecords)
 
 
       const protocolRecordMapWithMissingData = getProtocolRecordMapWithMissingData({ records, info: protocol.info, adapterType, metadata: dimensionProtocolInfo }) as any
@@ -873,6 +883,7 @@ runWithRuntimeLogging(run, {
 const spikeRecords = [] as any[]
 const invalidDataRecords = [] as any[]
 const invalidFinancialStatementRecords = [] as any[]
+const invalidRevenueRecords = [] as any[]
 
 const NOTIFY_ON_DISCORD = cronNotifyOnDiscord()
 

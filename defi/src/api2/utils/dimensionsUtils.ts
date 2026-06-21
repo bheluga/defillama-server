@@ -244,9 +244,10 @@ export function addAggregateRecords(pSummary: PROTOCOL_SUMMARY) {
   }
 }
 
-export function validateAggregateRecords(pSummary: PROTOCOL_SUMMARY, invalidRecordsMessages: Array<any>) {
+export function validateAggregateRecords(pSummary: PROTOCOL_SUMMARY, invalidRecordsMessages: Array<any>, invalidRevenueRecords: Array<any> = []) {
   // because of number rounding, we mark it's safe within margin of 100
   const SAFE_NUMBER_MARGIN = 0.1; // 10%
+  const STRICT_NUMBER_MARGIN = 0.001; // 0.1%,
   const THRESHOLD_TOTAL_FEES = 1_000_000; // total yearly fees >= $1M
   const THRESHOLD_TIMEFRAMES = ['yearly']; // check yearly only for now
   
@@ -256,7 +257,9 @@ export function validateAggregateRecords(pSummary: PROTOCOL_SUMMARY, invalidReco
         const df = (value as any)[AdaptorRecordType.dailyFees]?.value || 0
         const dr = (value as any)[AdaptorRecordType.dailyRevenue]?.value || 0
         const dssr = (value as any)[AdaptorRecordType.dailySupplySideRevenue]?.value || 0
-        
+        const dhr = (value as any)[AdaptorRecordType.dailyHoldersRevenue]?.value || 0
+        const dpr = (value as any)[AdaptorRecordType.dailyProtocolRevenue]?.value || 0
+
         // ignore low fees protocols
         if (df < THRESHOLD_TOTAL_FEES) continue;
         
@@ -274,7 +277,55 @@ export function validateAggregateRecords(pSummary: PROTOCOL_SUMMARY, invalidReco
             }
           }
         }
-        
+
+        if (dr && dhr && dpr) {
+          if (unsafeMargin(dhr + dpr, dr, STRICT_NUMBER_MARGIN)) {
+            if (!invalidRevenueRecords.find(i => i.protocol === pSummary.info.name)) {
+              invalidRevenueRecords.push({
+                protocol: pSummary.info.name,
+                timeframe: timeframe,
+                key: key,
+                error: 'Sum of dhr and dpr is not equal to dr',
+                debug: `dhr: ${dhr}, dpr: ${dpr}, dr: ${dr}`,
+              })
+            }
+          }
+        } else if (dr && dhr) {
+          if (dhr > dr * (1 + STRICT_NUMBER_MARGIN)) {
+            if (!invalidRevenueRecords.find(i => i.protocol === pSummary.info.name)) {
+              invalidRevenueRecords.push({
+                protocol: pSummary.info.name,
+                timeframe: timeframe,
+                key: key,
+                error: 'dhr is greater than dr',
+                debug: `dhr: ${dhr}, dr: ${dr}`,
+              })
+            }
+          }
+        } else if (dr && dpr) {
+          if (dpr > dr * (1 + STRICT_NUMBER_MARGIN)) {
+            if (!invalidRevenueRecords.find(i => i.protocol === pSummary.info.name)) {
+              invalidRevenueRecords.push({
+                protocol: pSummary.info.name,
+                timeframe: timeframe,
+                key: key,
+                error: 'dpr is greater than dr',
+                debug: `dpr: ${dpr}, dr: ${dr}`,
+              })
+            }
+          }
+        } else if (!dr && (dhr || dpr)) {
+          if (!invalidRevenueRecords.find(i => i.protocol === pSummary.info.name)) {
+            invalidRevenueRecords.push({
+              protocol: pSummary.info.name,
+              timeframe: timeframe,
+              key: key,
+              error: 'dr is 0 but dhr/dpr is greater than 0',
+              debug: `dhr: ${dhr}, dpr: ${dpr}, dr: ${dr}`,
+            })
+          }
+        }
+
         // sum of breakdown labels should be equal to total
         for (const label of [AdaptorRecordType.dailyFees, AdaptorRecordType.dailySupplySideRevenue, AdaptorRecordType.dailyRevenue]) {
           if ((value as any)[label] && (value as any)[label]['by-label']) {
