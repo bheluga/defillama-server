@@ -6,7 +6,15 @@ const nonNegativeNumber = z.number().nonnegative().finite();
 const dateString = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD')
-  .refine((s) => !Number.isNaN(new Date(s).getTime()), { message: 'Invalid date' });
+  .refine((s) => {
+    const [y, m, d] = s.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return (
+      dt.getUTCFullYear() === y &&
+      dt.getUTCMonth() === m - 1 &&
+      dt.getUTCDate() === d
+    );
+  }, { message: 'Invalid date' });
 
 // ============================================================================
 // GET /v1/companies
