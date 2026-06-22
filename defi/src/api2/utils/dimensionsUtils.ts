@@ -368,8 +368,9 @@ export function validateRevenueRecords(pSummary: PROTOCOL_SUMMARY, invalidRevenu
 }
 
 function exceedsTotal(component: number, total: number, margin: number) {
-  return (total > 0 && component > total * (1 + margin)) ||
-    (total < 0 && component < total * (1 + margin));
+  if (total > 0) return component > total * (1 + margin);
+  if (total < 0) return component > 0 || component < total * (1 + margin);
+  return false;
 }
 
 function unsafeMargin(valueA: number, valueB: number, valueMargin: number) {
