@@ -7,7 +7,7 @@ import { getAllItemsUpdatedAfter } from "../../adaptors/db-utils/db2";
 import { getChainKeyFromLabel, getChainLabelFromKey } from '../../utils/normalizeChain';
 import { protocolsById } from "../../protocols/data";
 import { parentProtocolsById } from "../../protocols/parentProtocols";
-import { addAggregateRecords, getDimensionsCacheV2, storeDimensionsCacheV2, storeDimensionsMetadata, transformDimensionRecord, validateAggregateRecords, } from "../utils/dimensionsUtils";
+import { addAggregateRecords, getDimensionsCacheV2, storeDimensionsCacheV2, storeDimensionsMetadata, transformDimensionRecord, validateAggregateRecords, validateRevenueRecords, } from "../utils/dimensionsUtils";
 import { storeEmissionsCache, } from "../utils/emissionsUtils";
 import { getNextTimeS, getTimeSDaysAgo, getUnixTimeNow, timeSToUnix } from "../utils/time";
 
@@ -103,7 +103,7 @@ ${tableToString(invalidFinancialStatementRecords, ['protocol', 'timeframe', 'key
 
 
 ${tableToString(invalidRevenueRecords, ['protocol', 'timeframe', 'key', 'error', 'debug'])}`,
-        process.env.REVENUE_MISMATCHES_CHANNEL_WEBHOOK)
+        process.env.REVENUE_MISMATCHES_CHANNEL_WEBHOOK!)
     }
   }
 
@@ -333,7 +333,8 @@ ${tableToString(invalidRevenueRecords, ['protocol', 'timeframe', 'key', 'error',
       addAggregateRecords(protocol)
 
       // validate and detect invalid financial statement records
-      validateAggregateRecords(protocol, invalidFinancialStatementRecords, invalidRevenueRecords)
+      validateAggregateRecords(protocol, invalidFinancialStatementRecords)
+      validateRevenueRecords(protocol, invalidRevenueRecords)
 
 
       const protocolRecordMapWithMissingData = getProtocolRecordMapWithMissingData({ records, info: protocol.info, adapterType, metadata: dimensionProtocolInfo }) as any
