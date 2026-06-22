@@ -217,7 +217,7 @@ const endpoints: TestEndpoint[] = [
 
   // ── Equities ─────────────────────────────────────────────────────────
   { name: 'equities companies', path: '/equities/v1/companies' },
-  { name: 'equities summary', path: '/equities/v1/summary?ticker=NVDA' },
+  { name: 'equities summary', path: '/equities/v1/summary?ticker=NVDA&country=US' },
 ];
 
 // ── Tests ──────────────────────────────────────────────────────────────
